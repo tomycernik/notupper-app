@@ -4,15 +4,23 @@ import { Observable, map } from 'rxjs';
 import { Pedido, PedidoEstado, PedidoTamano, ApiResponse } from '../models/index';
 import { environment } from '../../../environments/environment';
 
+export interface PedidoExtra {
+  tipo: 'empanada' | 'pizza';
+  sabor: string;
+  cantidad: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class PedidoService {
   private base = `${environment.apiUrl}/pedidos`;
 
   constructor(private http: HttpClient) {}
 
-  crear(vianda_id: string, tamano: PedidoTamano, observaciones?: string): Observable<Pedido> {
-    return this.http.post<ApiResponse<Pedido>>(this.base, { vianda_id, tamano, observaciones })
-      .pipe(map(r => r.data!));
+  crear(vianda_id: string | null, tamano: PedidoTamano, observaciones?: string, extras?: PedidoExtra[]): Observable<Pedido> {
+    const body: any = { tamano, observaciones };
+    if (vianda_id) body.vianda_id = vianda_id;
+    if (extras && extras.length > 0) body.extras = extras;
+    return this.http.post<ApiResponse<Pedido>>(this.base, body).pipe(map(r => r.data!));
   }
 
   getMisPedidos(): Observable<Pedido[]> {

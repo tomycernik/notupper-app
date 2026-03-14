@@ -6,6 +6,7 @@ import { ViandaService } from '../../core/services/vianda.service';
 import { PedidoService } from '../../core/services/pedido.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Vianda, PedidoTamano } from '../../core/models/index';
+import { PedidoExtra } from '../../core/services/pedido.service';
 
 interface ExtraItem {
   id: string;
@@ -626,7 +627,10 @@ export class MenuComponent implements OnInit {
     const v = this.selectedVianda();
     if (v) {
       this.loadingPedido.set(true);
-      this.pedidoService.crear(v.id, this.tamano(), this.observaciones || undefined).subscribe({
+      const extrasArr: PedidoExtra[] = this.extrasSeleccionados().map(e => ({
+        tipo: e.tipo, sabor: e.sabor, cantidad: e.cantidad
+      }));
+      this.pedidoService.crear(v.id, this.tamano(), this.observaciones || undefined, extrasArr.length ? extrasArr : undefined).subscribe({
         next: () => {
           this.loadingPedido.set(false);
           window.open(this.whatsappPedidoUrl(), '_blank');
@@ -639,45 +643,53 @@ export class MenuComponent implements OnInit {
         }
       });
     } else {
-      window.open(this.whatsappPedidoUrl(), '_blank');
-      this.cancelar();
+      // Solo extras sin vianda
+      const extrasArr: PedidoExtra[] = this.extrasSeleccionados().map(e => ({
+        tipo: e.tipo, sabor: e.sabor, cantidad: e.cantidad
+      }));
+      this.loadingPedido.set(true);
+      this.pedidoService.crear(null as any, 'CHICA', this.observaciones || undefined, extrasArr).subscribe({
+        next: () => {
+          this.loadingPedido.set(false);
+          window.open(this.whatsappPedidoUrl(), '_blank');
+          this.cancelar();
+        },
+        error: () => {
+          this.loadingPedido.set(false);
+          this.feedbackMsg.set('❌ Hubo un error. Intentá de nuevo.');
+          this.feedbackOk.set(false);
+        }
+      });
     }
   }
 
   whatsappPedidoUrl(): string {
     const v = this.selectedVianda();
     const u = this.auth.user();
-    const nl = '\n';
-
-    let msg = `🍱 *Pedido NotTupper*${nl}${nl}`;
-    msg += `👤 *Cliente:* ${u?.nombre ?? ''} ${u?.apellido ?? ''}${nl}`;
-    msg += `📍 *Zona:* ${u?.zona ?? ''}${nl}`;
-    msg += `📱 *Celular:* ${u?.celular ?? ''}${nl}${nl}`;
-
+    const nl = '%0A';
+    let msg = '🍱 *Pedido NotTupper*' + nl + nl;
+    msg += '👤 *Cliente:* ' + (u?.nombre ?? '') + ' ' + (u?.apellido ?? '') + nl;
+    msg += '📍 *Zona:* ' + (u?.zona ?? '') + nl;
+    msg += '📱 *Celular:* ' + (u?.celular ?? '') + nl + nl;
     if (v) {
       const tipo = v.tipo === 'COMUN' ? 'Común' : 'Vegetariana';
       const tam = this.tamano() === 'CHICA' ? '300g · $35.000' : '500g · $45.000';
-      msg += `🥘 *Vianda:* ${v.nombre} (${tipo})${nl}`;
-      msg += `📦 *Tamaño:* ${tam}${nl}`;
+      msg += '🥘 *Vianda:* ' + v.nombre + ' (' + tipo + ')' + nl;
+      msg += '📦 *Tamaño:* ' + tam + nl;
     }
-
     const extras = this.extrasSeleccionados();
     if (extras.length > 0) {
-      msg += `${nl}🥟 *Extras:*${nl}`;
+      msg += nl + '🥟 *Extras:*' + nl;
       extras.forEach(e => {
-        const tipoExtra = e.tipo === 'empanada' ? 'Empanada' : 'Pizza';
-        msg += `  · ${e.cantidad}× ${tipoExtra} ${e.sabor} ($${(e.precio * e.cantidad).toLocaleString('es-AR')})${nl}`;
+        msg += '  · ' + e.cantidad + '× ' + (e.tipo === 'empanada' ? 'Empanada' : 'Pizza') + ' ' + e.sabor + ' ($' + (e.precio * e.cantidad).toLocaleString('es-AR') + ')' + nl;
       });
     }
-
-    msg += `${nl}💰 *Total:* $${this.totalEstimado().toLocaleString('es-AR')}`;
-    if (this.observaciones) msg += `${nl}📝 ${this.observaciones}`;
-
-    return `https://wa.me/5491167353868?text=${encodeURIComponent(msg)}`;
+    msg += nl + '💰 *Total:* $' + this.totalEstimado().toLocaleString('es-AR');
+    if (this.observaciones) msg += nl + '📝 ' + this.observaciones;
+    return 'https://wa.me/5491167353868?text=' + msg;
   }
 
   whatsappConsultaUrl(): string {
-    const msg = 'Hola NotTupper! Quiero consultar sobre el menú 🍱';
-    return `https://wa.me/5491167353868?text=${encodeURIComponent(msg)}`;
+    return 'https://wa.me/5491167353868?text=Hola%20NotTupper!%20Quiero%20consultar%20sobre%20el%20men%C3%BA%20%F0%9F%8D%B1';
   }
 }
