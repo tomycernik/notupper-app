@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://tu-api.vercel.app/api',
+  apiUrl: 'https://notupper-api-production.up.railway.app/api'
 };
