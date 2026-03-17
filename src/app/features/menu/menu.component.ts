@@ -82,7 +82,7 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
               </div>
               <div class="quienes__social">
                 <a href="https://instagram.com/NOTTUPPER" target="_blank" class="quienes__ig">
-                  📸 @NOTTUPPER#64;NOTTUPPER
+                  📸 &#64;NOTTUPPER
                 </a>
               </div>
             </div>
