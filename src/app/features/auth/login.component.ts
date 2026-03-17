@@ -1,7 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 
 @Component({
@@ -130,13 +130,20 @@ export class LoginComponent {
   loading  = signal(false);
   error    = signal('');
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(
+    private auth: AuthService,
+    private router: Router,
+    private route: ActivatedRoute,
+  ) {}
 
   async submit() {
     if (!this.email || !this.password) { this.error.set('Completá todos los campos'); return; }
     this.loading.set(true); this.error.set('');
     this.auth.login({ email: this.email, password: this.password }).subscribe({
-      next: () => this.router.navigate(['/']),
+      next: () => {
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/';
+        this.router.navigateByUrl(returnUrl);
+      },
       error: (e: any) => { this.loading.set(false); this.error.set(e.error?.message ?? 'Error al ingresar'); }
     });
   }

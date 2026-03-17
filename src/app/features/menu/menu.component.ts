@@ -22,6 +22,18 @@ interface ExtraItem {
   cantidad: number;
 }
 
+interface PedidoDraftItem {
+  viandaId: string;
+  tamano: PedidoTamano;
+  cantidad: number;
+}
+
+interface PedidoDraft {
+  viandas: PedidoDraftItem[];
+  extras: Record<string, number>;
+  observaciones: string;
+}
+
 const EMPANADAS = ['Carne suave', 'Carne a cuchillo', 'Atún', 'Queso y cebolla', 'Jamón y queso', 'Pollo'];
 const PIZZAS = ['Queso', 'Queso y cebolla'];
 
@@ -481,6 +493,8 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
   `]
 })
 export class MenuComponent implements OnInit {
+  private readonly DRAFT_KEY = 'nt_pedido_draft';
+
   empanadas = EMPANADAS;
   pizzas    = PIZZAS;
 
@@ -504,9 +518,53 @@ export class MenuComponent implements OnInit {
 
   ngOnInit(): void {
     this.viandaService.getAll(true).subscribe({
-      next: v => { this.viandas.set(v); this.loading.set(false); },
+      next: v => {
+        this.viandas.set(v);
+        this.restoreDraft(v);
+        this.loading.set(false);
+      },
       error: () => this.loading.set(false),
     });
+  }
+
+  private saveDraft(): void {
+    const draft: PedidoDraft = {
+      viandas: this.viandas_sel().map(vs => ({
+        viandaId: vs.vianda.id,
+        tamano: vs.tamano,
+        cantidad: vs.cantidad,
+      })),
+      extras: this.extras,
+      observaciones: this.observaciones,
+    };
+    localStorage.setItem(this.DRAFT_KEY, JSON.stringify(draft));
+  }
+
+  private restoreDraft(viandasDisponibles: Vianda[]): void {
+    try {
+      const raw = localStorage.getItem(this.DRAFT_KEY);
+      if (!raw) return;
+
+      const draft = JSON.parse(raw) as PedidoDraft;
+      const restauradas: ViandaSeleccionada[] = (draft.viandas ?? [])
+        .map(item => {
+          const vianda = viandasDisponibles.find(v => v.id === item.viandaId);
+          if (!vianda || item.cantidad <= 0) return null;
+          return {
+            vianda,
+            tamano: item.tamano,
+            cantidad: item.cantidad,
+          } as ViandaSeleccionada;
+        })
+        .filter((item): item is ViandaSeleccionada => item !== null);
+
+      if (restauradas.length > 0) this.viandas_sel.set(restauradas);
+      this.extras = draft.extras ?? {};
+      this.observaciones = draft.observaciones ?? '';
+      localStorage.removeItem(this.DRAFT_KEY);
+    } catch {
+      localStorage.removeItem(this.DRAFT_KEY);
+    }
   }
 
   scrollAlMenu(): void {
@@ -552,6 +610,7 @@ export class MenuComponent implements OnInit {
       this.viandas_sel.update(list => [...list, { vianda: v, tamano, cantidad: 1 }]);
       this.mostrarToastTemporal();
     }
+    this.saveDraft();
   }
 
   toggleVianda(v: Vianda): void {
@@ -576,6 +635,7 @@ export class MenuComponent implements OnInit {
       
       return list.map((vs, i) => i === idx ? { ...vs, cantidad: newCant } : vs);
     });
+    this.saveDraft();
   }
 
   getCantidad(v: Vianda): number {
@@ -608,18 +668,23 @@ export class MenuComponent implements OnInit {
     this.viandas_sel.update(list =>
       list.filter(vs => !(vs.vianda.id === v.id && vs.tamano === tamano))
     );
+    this.saveDraft();
   }
 
   incrementar(tipo: string, sabor: string): void {
     const key = tipo + ':' + sabor;
     this.extras = { ...this.extras, [key]: (this.extras[key] ?? 0) + 1 };
     this.mostrarToastTemporal();
+    this.saveDraft();
   }
 
   decrementar(tipo: string, sabor: string): void {
     const key = tipo + ':' + sabor;
     const cur = this.extras[key] ?? 0;
-    if (cur > 0) this.extras = { ...this.extras, [key]: cur - 1 };
+    if (cur > 0) {
+      this.extras = { ...this.extras, [key]: cur - 1 };
+      this.saveDraft();
+    }
   }
 
   tieneExtras(): boolean {
@@ -653,10 +718,15 @@ export class MenuComponent implements OnInit {
     this.observaciones = '';
     this.feedbackMsg.set('');
     this.mostrarToast.set(false);
+    localStorage.removeItem(this.DRAFT_KEY);
   }
 
   confirmar(): void {
-    if (!this.auth.isLogged()) { this.router.navigate(['/auth/login']); return; }
+    if (!this.auth.isLogged()) {
+      this.saveDraft();
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
     const sel = this.viandas_sel();
     const extrasArr: PedidoExtra[] = this.extrasSeleccionados().map(e => ({ tipo: e.tipo, sabor: e.sabor, cantidad: e.cantidad }));
 
