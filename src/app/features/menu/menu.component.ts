@@ -11,6 +11,7 @@ import { PedidoExtra } from '../../core/services/pedido.service';
 interface ViandaSeleccionada {
   vianda: Vianda;
   tamano: PedidoTamano;
+  cantidad: number;
 }
 
 interface ExtraItem {
@@ -138,6 +139,11 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
                             <span>GRANDE</span><span class="tam-mini__price">$45k</span>
                           </button>
                         </div>
+                        <div class="vianda-cnt">
+                          <button class="counter__btn" (click)="$event.stopPropagation(); cambiarCantidad(v, -1)">−</button>
+                          <span class="counter__val">{{ getCantidad(v) }}</span>
+                          <button class="counter__btn counter__btn--plus" (click)="$event.stopPropagation(); cambiarCantidad(v, 1)">+</button>
+                        </div>
                         <span class="tick" [class.tick--veg]="v.tipo === 'VEGETARIANA'">✓</span>
                       } @else {
                         <span class="select-hint">+ Agregar</span>
@@ -209,17 +215,17 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
 
               @if (viandas_sel().length > 0) {
                 <div class="panel__section">
-                  <p class="panel__label">Viandas ({{ viandas_sel().length }} pack{{ viandas_sel().length > 1 ? 's' : '' }})</p>
+                  <p class="panel__label">Viandas ({{ totalPacks() }} pack{{ totalPacks() > 1 ? 's' : '' }})</p>
                   @for (vs of viandas_sel(); track vs.vianda.id) {
                     <div class="panel__vianda-item">
                       <div class="panel__vianda-info">
-                        <span class="panel__vianda-nombre">{{ vs.vianda.nombre }}</span>
+                        <span class="panel__vianda-nombre">{{ vs.cantidad > 1 ? vs.cantidad + '× ' : '' }}{{ vs.vianda.nombre }}</span>
                         <span class="tipo-pill" [class.tipo-pill--veg]="vs.vianda.tipo === 'VEGETARIANA'" style="font-size:0.65rem">
                           {{ vs.vianda.tipo === 'COMUN' ? '🍖' : '🥦' }} {{ vs.tamano }}
                         </span>
                       </div>
                       <div class="panel__vianda-right">
-                        <span class="panel__vianda-price">{{ "$" + (vs.tamano === 'CHICA' ? 35000 : 45000).toLocaleString('es-AR') }}</span>
+                        <span class="panel__vianda-price">{{ "$" + ((vs.tamano === 'CHICA' ? 35000 : 45000) * vs.cantidad).toLocaleString('es-AR') }}</span>
                         <button class="panel__remove" (click)="quitarVianda(vs.vianda)">✕</button>
                       </div>
                     </div>
@@ -357,6 +363,7 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
     .vianda-row__right { flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
 
     .vianda-row__tamanos { display: flex; gap: 6px; }
+    .vianda-cnt { display: flex; align-items: center; gap: 6px; }
     .tam-mini { display: flex; flex-direction: column; align-items: center; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; transition: all 0.15s; font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; color: var(--text); letter-spacing: 0.05em; gap: 1px; }
     .tam-mini:hover { border-color: rgba(201,168,76,0.3); }
     .tam-mini--active { border-color: var(--gold) !important; background: rgba(201,168,76,0.08); }
@@ -458,6 +465,8 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
       .wsp-fab { bottom: 20px; right: 20px; width: 50px; height: 50px; }
       .vianda-row__tamanos { display: none; }
       .vianda-row--selected .vianda-row__tamanos { display: flex; }
+      .vianda-cnt { display: none; }
+      .vianda-row--selected .vianda-cnt { display: flex; }
     }
   `]
 })
@@ -527,10 +536,23 @@ export class MenuComponent implements OnInit {
     if (this.isSelected(v)) {
       this.quitarVianda(v);
     } else {
-      this.viandas_sel.update(list => [...list, { vianda: v, tamano: 'CHICA' }]);
+      this.viandas_sel.update(list => [...list, { vianda: v, tamano: 'CHICA', cantidad: 1 }]);
       this.mostrarToastTemporal();
     }
     this.feedbackMsg.set('');
+  }
+
+  getCantidad(v: Vianda): number {
+    return this.viandas_sel().find(vs => vs.vianda.id === v.id)?.cantidad ?? 1;
+  }
+
+  cambiarCantidad(v: Vianda, delta: number): void {
+    this.viandas_sel.update(list =>
+      list.map(vs => vs.vianda.id === v.id
+        ? { ...vs, cantidad: Math.max(1, vs.cantidad + delta) }
+        : vs
+      )
+    );
   }
 
   quitarVianda(v: Vianda): void {
@@ -562,8 +584,12 @@ export class MenuComponent implements OnInit {
       });
   }
 
+  totalPacks(): number {
+    return this.viandas_sel().reduce((sum, vs) => sum + vs.cantidad, 0);
+  }
+
   totalEstimado(): number {
-    let total = this.viandas_sel().reduce((sum, vs) => sum + (vs.tamano === 'CHICA' ? 35000 : 45000), 0);
+    let total = this.viandas_sel().reduce((sum, vs) => sum + (vs.tamano === 'CHICA' ? 35000 : 45000) * vs.cantidad, 0);
     Object.entries(this.extras).filter(([, v]) => v > 0).forEach(([key, cant]) => {
       total += (key.startsWith('empanada') ? 7500 : 10000) * cant;
     });
@@ -587,15 +613,17 @@ export class MenuComponent implements OnInit {
 
     this.loadingPedido.set(true);
 
-    // Si hay múltiples viandas, crear un pedido por cada una
+    // Si hay múltiples viandas, crear un pedido por cada una (respetando cantidad)
     if (sel.length > 0) {
-      const promesas = sel.map((vs, idx) =>
-        this.pedidoService.crear(
-          vs.vianda.id,
-          vs.tamano,
-          idx === 0 ? (this.observaciones || undefined) : undefined,
-          idx === 0 ? (extrasArr.length ? extrasArr : undefined) : undefined
-        ).toPromise()
+      const promesas = sel.flatMap((vs, idx) =>
+        Array.from({ length: vs.cantidad }, (_, i) =>
+          this.pedidoService.crear(
+            vs.vianda.id,
+            vs.tamano,
+            idx === 0 && i === 0 ? (this.observaciones || undefined) : undefined,
+            idx === 0 && i === 0 ? (extrasArr.length ? extrasArr : undefined) : undefined
+          ).toPromise()
+        )
       );
 
       Promise.all(promesas).then(() => {
@@ -638,7 +666,7 @@ export class MenuComponent implements OnInit {
       sel.forEach(vs => {
         const tipo = vs.vianda.tipo === 'COMUN' ? 'Común' : 'Vegetariana';
         const tam = vs.tamano === 'CHICA' ? '300g · $35.000' : '500g · $45.000';
-        msg += '  · ' + vs.vianda.nombre + ' (' + tipo + ') — ' + tam + nl;
+        msg += '  · ' + vs.cantidad + '× ' + vs.vianda.nombre + ' (' + tipo + ') — ' + tam + nl;
       });
     }
 
