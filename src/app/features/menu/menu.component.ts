@@ -107,9 +107,7 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
                 @for (v of viandas(); track v.id; let i = $index) {
                   <div class="vianda-row"
                        [class.vianda-row--veg]="v.tipo === 'VEGETARIANA'"
-                       [class.vianda-row--selected]="isSelected(v)"
-                       [style.animation-delay]="(i * 0.08) + 's'"
-                       (click)="toggleVianda(v)">
+                       [style.animation-delay]="(i * 0.08) + 's'">
                     <div class="vianda-row__left">
                       <span class="tipo-pill" [class.tipo-pill--veg]="v.tipo === 'VEGETARIANA'">
                         {{ v.tipo === 'COMUN' ? '🍖 Común' : '🥦 Vegetariana' }}
@@ -127,27 +125,37 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
                       }
                     </div>
                     <div class="vianda-row__right">
-                      @if (isSelected(v)) {
-                        <div class="vianda-row__tamanos">
-                          <button class="tam-mini" [class.tam-mini--active]="getTamano(v) === 'CHICA'"
-                                  (click)="$event.stopPropagation(); setTamano(v, 'CHICA')">
+                      <div class="vianda-row__tamanos">
+                        <div class="tam-group">
+                          <button class="tam-mini" 
+                                  [class.tam-mini--active]="(getCantidadPorTamano(v, 'CHICA')) > 0"
+                                  (click)="setTamano(v, 'CHICA')">
                             <span>CHICA</span><span class="tam-mini__price">$35k</span>
                           </button>
-                          <button class="tam-mini" [class.tam-mini--active]="getTamano(v) === 'GRANDE'"
+                          @if (getCantidadPorTamano(v, 'CHICA') > 0) {
+                            <div class="vianda-cnt" style="margin-left: 4px;">
+                              <button class="counter__btn" (click)="cambiarCantidadPorTamano(v, 'CHICA', -1)">−</button>
+                              <span class="counter__val">{{ getCantidadPorTamano(v, 'CHICA') }}</span>
+                              <button class="counter__btn counter__btn--plus" (click)="cambiarCantidadPorTamano(v, 'CHICA', 1)">+</button>
+                            </div>
+                          }
+                        </div>
+                        <div class="tam-group">
+                          <button class="tam-mini" 
+                                  [class.tam-mini--active]="(getCantidadPorTamano(v, 'GRANDE')) > 0"
                                   [class.tam-mini--veg]="v.tipo === 'VEGETARIANA'"
-                                  (click)="$event.stopPropagation(); setTamano(v, 'GRANDE')">
+                                  (click)="setTamano(v, 'GRANDE')">
                             <span>GRANDE</span><span class="tam-mini__price">$45k</span>
                           </button>
+                          @if (getCantidadPorTamano(v, 'GRANDE') > 0) {
+                            <div class="vianda-cnt" style="margin-left: 4px;">
+                              <button class="counter__btn" (click)="cambiarCantidadPorTamano(v, 'GRANDE', -1)">−</button>
+                              <span class="counter__val">{{ getCantidadPorTamano(v, 'GRANDE') }}</span>
+                              <button class="counter__btn counter__btn--plus" (click)="cambiarCantidadPorTamano(v, 'GRANDE', 1)">+</button>
+                            </div>
+                          }
                         </div>
-                        <div class="vianda-cnt">
-                          <button class="counter__btn" (click)="$event.stopPropagation(); cambiarCantidad(v, -1)">−</button>
-                          <span class="counter__val">{{ getCantidad(v) }}</span>
-                          <button class="counter__btn counter__btn--plus" (click)="$event.stopPropagation(); cambiarCantidad(v, 1)">+</button>
-                        </div>
-                        <span class="tick" [class.tick--veg]="v.tipo === 'VEGETARIANA'">✓</span>
-                      } @else {
-                        <span class="select-hint">+ Agregar</span>
-                      }
+                      </div>
                     </div>
                   </div>
                 }
@@ -208,7 +216,7 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
               <div class="panel__placeholder">
                 <p class="panel__placeholder-icon">👆</p>
                 <p class="panel__placeholder-title">Tu pedido</p>
-                <p class="panel__placeholder-hint">Tocá una vianda para agregarla, o sumá empanadas y pizzas</p>
+                <p class="panel__placeholder-hint">Seleccioná CHICA o GRANDE en las viandas, o sumá empanadas y pizzas</p>
               </div>
             } @else {
               <h3 class="panel__title">🛒 Tu pedido</h3>
@@ -216,7 +224,7 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
               @if (viandas_sel().length > 0) {
                 <div class="panel__section">
                   <p class="panel__label">Viandas ({{ totalPacks() }} pack{{ totalPacks() > 1 ? 's' : '' }})</p>
-                  @for (vs of viandas_sel(); track vs.vianda.id) {
+                  @for (vs of viandas_sel(); track vs.vianda.id + ':' + vs.tamano) {
                     <div class="panel__vianda-item">
                       <div class="panel__vianda-info">
                         <span class="panel__vianda-nombre">{{ vs.cantidad > 1 ? vs.cantidad + '× ' : '' }}{{ vs.vianda.nombre }}</span>
@@ -226,7 +234,7 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
                       </div>
                       <div class="panel__vianda-right">
                         <span class="panel__vianda-price">{{ "$" + ((vs.tamano === 'CHICA' ? 35000 : 45000) * vs.cantidad).toLocaleString('es-AR') }}</span>
-                        <button class="panel__remove" (click)="quitarVianda(vs.vianda)">✕</button>
+                        <button class="panel__remove" (click)="quitarViandaEspecifica(vs.vianda, vs.tamano)">✕</button>
                       </div>
                     </div>
                   }
@@ -308,15 +316,15 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
     .brand-tupper { color: var(--gold); text-shadow: 0 0 30px rgba(201,168,76,0.3); }
     .hero__claim { color: var(--text); font-size: clamp(1rem, 2.5vw, 1.15rem); font-weight: 700; margin-top: 10px; }
     .hero__tagline { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
-    .hero__chips { display: inline-flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; justify-content: center; }
+    .hero__chips { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; justify-content: center; margin-bottom: 24px; }
     .chip { display: flex; align-items: center; gap: 10px; padding: 8px 20px; border-radius: 32px; background: rgba(201,168,76,0.08); border: 1.5px solid rgba(201,168,76,0.3); }
     .chip--outline { background: transparent; }
     .chip__label { font-size: 0.78rem; color: var(--muted); font-weight: 700; letter-spacing: 0.06em; }
     .chip__price { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--gold); letter-spacing: 0.04em; }
 
     .hero__scroll-btn {
-      display: inline-flex; align-items: center; gap: 8px;
-      margin-top: 20px; padding: 10px 24px; border-radius: 32px;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      margin-top: 0; padding: 12px 32px; border-radius: 32px;
       background: var(--gold); color: #1a1209; border: none; cursor: pointer;
       font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.1em;
       transition: all 0.2s;
@@ -349,11 +357,9 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
 
     /* ── Viandas ──────────────────────────────────────── */
     .viandas-list { display: flex; flex-direction: column; gap: 10px; }
-    .vianda-row { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-radius: 12px; cursor: pointer; border: 1.5px solid var(--border); background: var(--bg-card); transition: border-color 0.18s, background 0.18s, transform 0.12s; animation: fadeUp 0.4s ease both; gap: 16px; }
+    .vianda-row { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-radius: 12px; cursor: pointer; border: 1.5px solid var(--border); background: var(--bg-card); transition: border-color 0.18s, background 0.18s, transform 0.12s; gap: 16px; }
     .vianda-row:hover { border-color: rgba(201,168,76,0.35); transform: translateX(3px); }
     .vianda-row--veg:hover { border-color: rgba(106,176,76,0.35); }
-    .vianda-row--selected { border-color: var(--gold) !important; background: rgba(201,168,76,0.04) !important; }
-    .vianda-row--selected.vianda-row--veg { border-color: var(--veg) !important; background: rgba(106,176,76,0.04) !important; }
     .vianda-row__left { flex: 1; min-width: 0; }
     .tipo-pill { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; background: var(--gold-dim); color: var(--gold); margin-bottom: 6px; }
     .tipo-pill--veg { background: var(--veg-dim); color: var(--veg); }
@@ -362,7 +368,8 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
     .vianda-row__obs { font-size: 0.78rem; color: #5a5450; margin-top: 4px; font-style: italic; }
     .vianda-row__right { flex-shrink: 0; display: flex; align-items: center; gap: 10px; }
 
-    .vianda-row__tamanos { display: flex; gap: 6px; }
+    .vianda-row__tamanos { display: flex; gap: 12px; }
+    .tam-group { display: flex; align-items: center; gap: 4px; }
     .vianda-cnt { display: flex; align-items: center; gap: 6px; }
     .tam-mini { display: flex; flex-direction: column; align-items: center; padding: 8px 12px; border-radius: 8px; border: 1.5px solid var(--border); background: var(--bg); cursor: pointer; transition: all 0.15s; font-family: 'Bebas Neue', sans-serif; font-size: 0.85rem; color: var(--text); letter-spacing: 0.05em; gap: 1px; }
     .tam-mini:hover { border-color: rgba(201,168,76,0.3); }
@@ -459,14 +466,17 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
       .layout { grid-template-columns: 1fr; padding: 24px 16px 80px; gap: 0; }
       .col-aside { position: static; order: -1; margin-bottom: 28px; }
       .extras-grid { grid-template-columns: 1fr; }
-      .hero__inner { padding: 24px 20px 20px; }
+      .hero__inner { padding: 20px 16px 16px; }
+      .hero__chips { margin-bottom: 16px; }
+      .hero__scroll-btn { display: inline-flex; padding: 11px 28px; font-size: 0.95rem; }
       .quienes__inner { grid-template-columns: 1fr; gap: 20px; padding: 0 20px; }
       .quienes__right { flex-direction: row; justify-content: flex-start; }
       .wsp-fab { bottom: 20px; right: 20px; width: 50px; height: 50px; }
-      .vianda-row__tamanos { display: none; }
-      .vianda-row--selected .vianda-row__tamanos { display: flex; }
-      .vianda-cnt { display: none; }
-      .vianda-row--selected .vianda-cnt { display: flex; }
+      .vianda-row__tamanos { flex-wrap: wrap; gap: 8px; }
+      .tam-mini { padding: 6px 10px; font-size: 0.75rem; }
+      .tam-mini__price { font-size: 0.62rem; }
+      .vianda-cnt { gap: 4px; }
+      .counter__btn { width: 24px; height: 24px; font-size: 0.9rem; }
     }
   `]
 })
@@ -527,19 +537,45 @@ export class MenuComponent implements OnInit {
   }
 
   setTamano(v: Vianda, tamano: PedidoTamano): void {
-    this.viandas_sel.update(list =>
-      list.map(vs => vs.vianda.id === v.id ? { ...vs, tamano } : vs)
-    );
+    const existing = this.viandas_sel().find(vs => vs.vianda.id === v.id && vs.tamano === tamano);
+    
+    if (existing) {
+      // Ya existe con este tamaño: incrementar cantidad
+      this.viandas_sel.update(list =>
+        list.map(vs => vs.vianda.id === v.id && vs.tamano === tamano
+          ? { ...vs, cantidad: vs.cantidad + 1 }
+          : vs
+        )
+      );
+    } else {
+      // No existe con este tamaño: agregar nueva entrada
+      this.viandas_sel.update(list => [...list, { vianda: v, tamano, cantidad: 1 }]);
+      this.mostrarToastTemporal();
+    }
   }
 
   toggleVianda(v: Vianda): void {
-    if (this.isSelected(v)) {
-      this.quitarVianda(v);
-    } else {
-      this.viandas_sel.update(list => [...list, { vianda: v, tamano: 'CHICA', cantidad: 1 }]);
-      this.mostrarToastTemporal();
-    }
-    this.feedbackMsg.set('');
+    // Método ya no se usa - reemplazado por setTamano()
+  }
+
+  getCantidadPorTamano(v: Vianda, tamano: PedidoTamano): number {
+    return this.viandas_sel().find(vs => vs.vianda.id === v.id && vs.tamano === tamano)?.cantidad ?? 0;
+  }
+
+  cambiarCantidadPorTamano(v: Vianda, tamano: PedidoTamano, delta: number): void {
+    this.viandas_sel.update(list => {
+      const idx = list.findIndex(vs => vs.vianda.id === v.id && vs.tamano === tamano);
+      if (idx === -1) return list;
+      
+      const newCant = list[idx].cantidad + delta;
+      
+      // Si llega a 0 o menos, quitar la entrada
+      if (newCant <= 0) {
+        return list.filter((_, i) => i !== idx);
+      }
+      
+      return list.map((vs, i) => i === idx ? { ...vs, cantidad: newCant } : vs);
+    });
   }
 
   getCantidad(v: Vianda): number {
@@ -556,7 +592,22 @@ export class MenuComponent implements OnInit {
   }
 
   quitarVianda(v: Vianda): void {
-    this.viandas_sel.update(list => list.filter(vs => vs.vianda.id !== v.id));
+    let removed = false;
+    this.viandas_sel.update(list =>
+      list.filter(vs => {
+        if (!removed && vs.vianda.id === v.id) {
+          removed = true;
+          return false;
+        }
+        return true;
+      })
+    );
+  }
+
+  quitarViandaEspecifica(v: Vianda, tamano: PedidoTamano): void {
+    this.viandas_sel.update(list =>
+      list.filter(vs => !(vs.vianda.id === v.id && vs.tamano === tamano))
+    );
   }
 
   incrementar(tipo: string, sabor: string): void {
