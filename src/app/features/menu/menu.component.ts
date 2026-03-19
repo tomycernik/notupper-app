@@ -226,9 +226,9 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
 
             @if (viandas_sel().length === 0 && !tieneExtras()) {
               <div class="panel__placeholder">
-                <p class="panel__placeholder-icon">👆</p>
-                <p class="panel__placeholder-title">Tu pedido</p>
-                <p class="panel__placeholder-hint">Seleccioná CHICA o GRANDE en las viandas, o sumá empanadas y pizzas</p>
+                <p class="panel__placeholder-icon">🛒</p>
+                <p class="panel__placeholder-title">Tu pedido aparece acá</p>
+                <p class="panel__placeholder-hint">Elegí CHICA o GRANDE en las viandas de arriba para empezar</p>
               </div>
             } @else {
               <h3 class="panel__title">🛒 Tu pedido</h3>
@@ -418,6 +418,14 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
     .col-aside { position: sticky; top: 80px; }
     .panel { background: var(--bg-card); border: 1.5px solid #1e1c18; border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; transition: border-color 0.3s, box-shadow 0.3s; }
     .panel--active { border-color: rgba(201,168,76,0.4); box-shadow: 0 0 32px rgba(201,168,76,0.08); }
+    @media (max-width: 768px) {
+      .panel--active { animation: panelPulse 0.4s ease; }
+    }
+    @keyframes panelPulse {
+      0%   { box-shadow: 0 0 0 rgba(201,168,76,0); }
+      50%  { box-shadow: 0 0 20px rgba(201,168,76,0.3); }
+      100% { box-shadow: 0 0 32px rgba(201,168,76,0.08); }
+    }
 
     .panel__placeholder { text-align: center; padding: 24px 16px; display: flex; flex-direction: column; gap: 8px; align-items: center; }
     .panel__placeholder-icon { font-size: 1.8rem; }
@@ -477,7 +485,13 @@ const PIZZAS = ['Queso', 'Queso y cebolla'];
     @media (max-width: 768px) {
       /* Layout */
       .layout { grid-template-columns: 1fr; padding: 20px 16px 100px; gap: 24px; }
-      .col-aside { position: static; order: 2; }
+      .col-aside { position: static; order: -1; }
+      /* Panel vacío en mobile: compacto y no invasivo */
+      .panel:not(.panel--active) { padding: 12px 16px; }
+      .panel:not(.panel--active) .panel__placeholder { flex-direction: row; padding: 8px 0; gap: 12px; text-align: left; align-items: center; }
+      .panel:not(.panel--active) .panel__placeholder-icon { font-size: 1.2rem; }
+      .panel:not(.panel--active) .panel__placeholder-title { font-size: 1rem; margin: 0; }
+      .panel:not(.panel--active) .panel__placeholder-hint { display: none; }
       .extras-grid { grid-template-columns: 1fr; }
 
       /* Hero */
@@ -644,6 +658,13 @@ export class MenuComponent implements OnInit {
     this.mostrarToast.set(true);
     clearTimeout(this.toastTimer);
     this.toastTimer = setTimeout(() => this.mostrarToast.set(false), 4000);
+    // En mobile, scrollear al panel después de un delay corto
+    if (this.esMobile()) {
+      setTimeout(() => {
+        const panel = document.querySelector('.col-aside');
+        if (panel) panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 300);
+    }
   }
 
   isSelected(v: Vianda): boolean {
