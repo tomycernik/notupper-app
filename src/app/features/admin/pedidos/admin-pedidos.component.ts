@@ -107,7 +107,7 @@ import { Pedido, PedidoEstado } from '../../../core/models/index';
       font-size: 0.85rem; font-weight: 700; font-family: var(--font-body); transition: all 0.15s;
     }
     .filter-btn:hover { border-color: var(--gold); color: var(--text); }
-    .filter-btn.active { background: var(--gold); color: #1a1a1a; border-color: var(--gold); }
+    .filter-btn.active { background: var(--gold); color: var(--color-cream, #F2EBDF); border-color: var(--gold); }
     .filter-count {
       background: rgba(255,255,255,0.15);
       border-radius: 10px; padding: 1px 7px; font-size: 0.75rem;
@@ -120,7 +120,7 @@ import { Pedido, PedidoEstado } from '../../../core/models/index';
       display: flex; justify-content: space-between; align-items: flex-start;
       gap: 20px; flex-wrap: wrap; transition: border-color 0.2s;
     }
-    .pedido-row:hover { border-color: rgba(201,168,76,0.2); }
+    .pedido-row:hover { border-color: rgba(46,89,53,0.2); }
 
     .pedido-row__main { display: flex; flex-direction: column; gap: 8px; flex: 1; }
     .pedido-row__user { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -133,7 +133,7 @@ import { Pedido, PedidoEstado } from '../../../core/models/index';
     .pedido-row__extras { display: flex; flex-wrap: wrap; gap: 6px; }
     .extra-chip {
       padding: 3px 10px; border-radius: 12px; font-size: 0.78rem; font-weight: 700;
-      background: rgba(201,168,76,0.1); color: var(--gold); border: 1px solid rgba(201,168,76,0.2);
+      background: rgba(46,89,53,0.1); color: var(--gold); border: 1px solid rgba(46,89,53,0.2);
     }
 
     .pedido-row__obs { font-size: 0.82rem; color: var(--text-muted); }

@@ -118,7 +118,7 @@ import { Comida, ComidaTipo } from '../../../core/models/index';
       background: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem;
       font-weight: 700; font-family: var(--font-body); transition: all 0.15s;
       &:hover { border-color: var(--gold); color: var(--text); }
-      &.active { background: var(--gold); color: #1a1a1a; border-color: var(--gold); }
+      &.active { background: var(--gold); color: var(--color-cream, #F2EBDF); border-color: var(--gold); }
     }
 
     .comidas-grid {
@@ -136,7 +136,7 @@ import { Comida, ComidaTipo } from '../../../core/models/index';
       flex-direction: column;
       gap: 8px;
       transition: border-color 0.2s;
-      &:hover { border-color: rgba(201,168,76,0.3); }
+      &:hover { border-color: rgba(46,89,53,0.3); }
 
       &__header { display: flex; gap: 6px; }
       &__name { font-family: var(--font-display); font-size: 1.1rem; }

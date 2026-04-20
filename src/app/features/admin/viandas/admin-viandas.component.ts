@@ -157,7 +157,7 @@ import { Vianda, Comida, ViandaTipo } from '../../../core/models/index';
       gap: 16px;
       flex-wrap: wrap;
       transition: border-color 0.2s;
-      &:hover { border-color: rgba(201,168,76,0.3); }
+      &:hover { border-color: rgba(46,89,53,0.3); }
     }
 
     .vianda-row__header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
@@ -215,13 +215,13 @@ import { Vianda, Comida, ViandaTipo } from '../../../core/models/index';
       cursor: pointer;
       transition: border-color 0.15s;
 
-      &--selected { border-color: var(--gold); background: rgba(201,168,76,0.06); }
-      &:hover { border-color: rgba(201,168,76,0.4); }
+      &--selected { border-color: var(--gold); background: rgba(46,89,53,0.06); }
+      &:hover { border-color: rgba(46,89,53,0.4); }
     }
 
     .comida-item__check {
       width: 20px; height: 20px;
-      background: var(--gold); color: #1a1a1a;
+      background: var(--gold); color: var(--color-cream, #F2EBDF);
       border-radius: 50%; font-size: 0.7rem; font-weight: 900;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0; opacity: 0; transition: opacity 0.15s;

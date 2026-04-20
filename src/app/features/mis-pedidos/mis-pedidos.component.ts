@@ -155,75 +155,256 @@ import { Pedido } from '../../core/models/index';
   `,
   styles: [`
     :host {
-      --gold: #c9a84c; --veg: #6ab04c;
-      --bg: #0f0c08; --bg-card: #161210;
-      --border: #252018; --text: #f0ece0; --muted: #7a7268;
+      --bg: var(--color-cream, #F2EBDF);
+      --bg-card: var(--color-white, #FFFFFF);
+      --bg-soft: var(--color-cream-soft, #FAF6EE);
+      --border: rgba(105, 115, 102, 0.22);
+      --border-soft: rgba(105, 115, 102, 0.12);
+      --text: var(--color-ink, #0C0D0D);
+      --muted: var(--color-sage, #697366);
+      --brand: var(--color-forest, #2E5935);
+      --brand-dark: var(--color-forest-dark, #1E3D23);
+      --brand-dim: rgba(46, 89, 53, 0.10);
+      --accent: var(--color-wheat, #D9BC9A);
+      --accent-dim: rgba(217, 188, 154, 0.35);
+      --danger: #B3443A;
+
+      /* Aliases legacy */
+      --gold: var(--brand);
+      --veg: var(--brand);
     }
+
     .page { min-height: 100vh; background: var(--bg); }
 
-    .header { background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 28px 0; }
-    .header__inner { max-width: 760px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
-    .header__title { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--text); letter-spacing: 0.05em; }
-    .header__sub { color: var(--muted); font-size: 0.9rem; margin-top: 4px; }
-    .header__sub strong { color: var(--text); }
-    .btn-volver { padding: 8px 18px; border-radius: 8px; border: 1px solid var(--border); color: var(--muted); font-size: 0.85rem; font-weight: 700; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
-    .btn-volver:hover { border-color: var(--gold); color: var(--text); }
+    .header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 32px 0;
+    }
+    .header__inner {
+      max-width: 760px; margin: 0 auto; padding: 0 24px;
+      display: flex; justify-content: space-between;
+      align-items: flex-start; gap: 16px; flex-wrap: wrap;
+    }
+    .header__title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.2rem; color: var(--text);
+      letter-spacing: 0.05em;
+    }
+    .header__sub {
+      color: var(--muted); font-size: 0.92rem; margin-top: 6px;
+    }
+    .header__sub strong { color: var(--brand); }
 
-    .content { max-width: 760px; margin: 0 auto; padding: 32px 24px 80px; display: flex; flex-direction: column; gap: 40px; }
+    .btn-volver {
+      padding: 9px 20px; border-radius: 20px;
+      border: 1.5px solid var(--brand);
+      color: var(--brand);
+      font-size: 0.85rem; font-weight: 700;
+      text-decoration: none; transition: all 0.15s;
+      white-space: nowrap;
+      background: transparent;
+    }
+    .btn-volver:hover {
+      background: var(--brand); color: var(--color-cream, #F2EBDF);
+    }
 
-    .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
-    .stat { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px 16px; text-align: center; }
-    .stat__val { font-family: 'Bebas Neue', sans-serif; font-size: 2.2rem; color: var(--gold); letter-spacing: 0.03em; display: block; }
-    .stat__label { font-size: 0.72rem; color: var(--muted); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    .content {
+      max-width: 760px; margin: 0 auto;
+      padding: 36px 24px 80px;
+      display: flex; flex-direction: column; gap: 40px;
+    }
 
-    .section { display: flex; flex-direction: column; gap: 12px; }
-    .section__title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--text); letter-spacing: 0.05em; }
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .stat {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 16px; text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+    .stat__val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2.4rem; color: var(--brand);
+      letter-spacing: 0.03em; display: block;
+    }
+    .stat__label {
+      font-size: 0.72rem; color: var(--muted);
+      font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
 
-    .pedidos-list { display: flex; flex-direction: column; gap: 10px; }
-    .pedido-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: border-color 0.2s; }
-    .pedido-card:hover { border-color: rgba(201,168,76,0.2); }
-    .pedido-card--activo { border-color: rgba(201,168,76,0.3); }
-    .pedido-card--cancelado { opacity: 0.45; }
-    .pedido-card__bar { height: 3px; }
-    .bar--pendiente { background: linear-gradient(90deg, var(--gold) 0%, transparent 80%); }
-    .bar--proceso { background: linear-gradient(90deg, var(--veg) 0%, transparent 80%); }
-    .pedido-card__body { padding: 16px 20px; }
-    .pedido-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
-    .pedido-card__nombre { font-family: 'Bebas Neue', sans-serif; font-size: 1.15rem; color: var(--text); letter-spacing: 0.02em; margin-bottom: 6px; }
-    .pedido-card__tags { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
-    .tag { padding: 2px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 800; background: rgba(201,168,76,0.12); color: var(--gold); }
-    .tag--veg { background: rgba(106,176,76,0.12); color: var(--veg); }
-    .tag--neutral { background: rgba(255,255,255,0.06); color: var(--muted); }
-    .pedido-card__extras { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
-    .extra-chip { padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; background: rgba(201,168,76,0.08); color: var(--gold); border: 1px solid rgba(201,168,76,0.15); }
-    .extra-chip--dim { background: rgba(255,255,255,0.04); color: var(--muted); border-color: var(--border); }
-    .pedido-card__obs { font-size: 0.78rem; color: var(--muted); margin-top: 6px; }
-    .pedido-card__fecha { font-size: 0.75rem; color: #4a4438; margin-top: 10px; }
+    .section { display: flex; flex-direction: column; gap: 14px; }
+    .section__title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem; color: var(--text);
+      letter-spacing: 0.05em;
+    }
 
-    .estado-badge { padding: 4px 12px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.06em; white-space: nowrap; flex-shrink: 0; }
-    .estado--pendiente { background: rgba(201,168,76,0.15); color: var(--gold); }
-    .estado--en_proceso { background: rgba(106,176,76,0.15); color: var(--veg); }
-    .estado--entregado { background: rgba(106,176,76,0.1); color: #5a9a4a; }
-    .estado--cancelado { background: rgba(224,80,80,0.1); color: #e05050; }
+    /* Pedido cards */
+    .pedidos-list { display: flex; flex-direction: column; gap: 12px; }
+    .pedido-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      box-shadow: var(--shadow-sm);
+    }
+    .pedido-card:hover {
+      border-color: var(--brand-dim);
+      box-shadow: var(--shadow);
+    }
+    .pedido-card--activo {
+      border-color: var(--brand);
+    }
+    .pedido-card--cancelado { opacity: 0.55; }
 
-    .skeletons { display: flex; flex-direction: column; gap: 10px; }
-    .sk-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-    .sk { border-radius: 6px; background: linear-gradient(90deg, #1e1a14 25%, #2a2418 50%, #1e1a14 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; }
+    .pedido-card__bar { height: 4px; }
+    .bar--pendiente {
+      background: linear-gradient(90deg, var(--accent) 0%, transparent 80%);
+    }
+    .bar--proceso {
+      background: linear-gradient(90deg, var(--brand) 0%, transparent 80%);
+    }
+
+    .pedido-card__body { padding: 18px 22px; }
+    .pedido-card__top {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; gap: 16px;
+    }
+    .pedido-card__nombre {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.2rem; color: var(--text);
+      letter-spacing: 0.02em; margin-bottom: 8px;
+    }
+    .pedido-card__tags {
+      display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px;
+    }
+
+    .tag {
+      padding: 3px 11px; border-radius: 12px;
+      font-size: 0.72rem; font-weight: 800;
+      background: var(--accent-dim); color: var(--brand-dark);
+    }
+    .tag--veg { background: var(--brand-dim); color: var(--brand); }
+    .tag--neutral {
+      background: rgba(105, 115, 102, 0.12); color: var(--muted);
+    }
+
+    .pedido-card__extras {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+    }
+    .extra-chip {
+      padding: 3px 11px; border-radius: 12px;
+      font-size: 0.78rem; font-weight: 700;
+      background: var(--accent-dim); color: var(--brand-dark);
+      border: 1px solid transparent;
+    }
+    .extra-chip--dim {
+      background: rgba(105, 115, 102, 0.08); color: var(--muted);
+      border-color: var(--border-soft);
+    }
+
+    .pedido-card__obs {
+      font-size: 0.82rem; color: var(--muted);
+      margin-top: 8px; font-style: italic;
+    }
+    .pedido-card__fecha {
+      font-size: 0.75rem; color: var(--muted);
+      opacity: 0.7; margin-top: 12px;
+    }
+
+    .estado-badge {
+      padding: 5px 13px; border-radius: 20px;
+      font-size: 0.72rem; font-weight: 800;
+      letter-spacing: 0.06em;
+      white-space: nowrap; flex-shrink: 0;
+    }
+    .estado--pendiente  { background: var(--accent-dim); color: var(--brand-dark); }
+    .estado--en_proceso { background: var(--brand-dim); color: var(--brand); }
+    .estado--entregado  { background: rgba(46, 89, 53, 0.18); color: var(--brand); }
+    .estado--cancelado  { background: rgba(179, 68, 58, 0.12); color: var(--danger); }
+
+    /* Skeletons */
+    .skeletons { display: flex; flex-direction: column; gap: 12px; }
+    .sk-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px; display: flex; flex-direction: column; gap: 10px;
+    }
+    .sk {
+      border-radius: 6px;
+      background: linear-gradient(90deg,
+        var(--bg-soft) 25%,
+        rgba(217, 188, 154, 0.25) 50%,
+        var(--bg-soft) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
     .sk--title { height: 22px; }
     .sk--line { height: 14px; }
 
-    .empty { text-align: center; padding: 60px 24px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-    .empty__icon { font-size: 3rem; }
-    .empty__title { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; color: var(--muted); letter-spacing: 0.04em; }
-    .empty__sub { color: #4a4438; font-size: 0.9rem; }
+    /* Empty */
+    .empty {
+      text-align: center; padding: 70px 24px;
+      display: flex; flex-direction: column;
+      align-items: center; gap: 14px;
+      background: var(--bg-card);
+      border: 1.5px dashed var(--border);
+      border-radius: 18px;
+    }
+    .empty__icon { font-size: 3.5rem; }
+    .empty__title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.55rem; color: var(--brand);
+      letter-spacing: 0.04em;
+    }
+    .empty__sub { color: var(--muted); font-size: 0.95rem; }
 
-    .cta-volver { background: var(--bg-card); border: 1px solid rgba(201,168,76,0.2); border-radius: 14px; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-    .cta-volver__text { color: var(--muted); font-size: 0.9rem; }
-    .btn-primary { padding: 11px 24px; border-radius: 8px; border: none; background: var(--gold); color: #1a1209; font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.08em; cursor: pointer; text-decoration: none; transition: all 0.15s; white-space: nowrap; }
-    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    /* CTA volver */
+    .cta-volver {
+      background: var(--accent-dim);
+      border: 1px solid transparent;
+      border-radius: 16px;
+      padding: 26px 30px;
+      display: flex; justify-content: space-between;
+      align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .cta-volver__text {
+      color: var(--brand-dark); font-size: 0.95rem;
+      font-weight: 600;
+    }
 
-    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
-    @media (max-width: 600px) { .cta-volver { flex-direction: column; text-align: center; } }
+    .btn-primary {
+      padding: 12px 26px; border-radius: 20px;
+      border: none;
+      background: var(--brand); color: var(--color-cream, #F2EBDF);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.05rem; letter-spacing: 0.08em;
+      cursor: pointer; text-decoration: none;
+      transition: all 0.15s; white-space: nowrap;
+      box-shadow: var(--shadow-sm);
+    }
+    .btn-primary:hover {
+      background: var(--brand-dark);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    @keyframes shimmer {
+      0%   { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    @media (max-width: 600px) {
+      .cta-volver { flex-direction: column; text-align: center; }
+      .stats { grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+      .stat { padding: 16px 10px; }
+      .stat__val { font-size: 1.8rem; }
+    }
   `]
 })
 export class MisPedidosComponent implements OnInit {
